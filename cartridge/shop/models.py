@@ -347,8 +347,7 @@ class Category(Page, RichText):
         upload_to=upload_to("shop.Category.featured_image", "shop"),
         format="Image", max_length=255, null=True, blank=True)
     products = models.ManyToManyField("Product", blank=True,
-                                     verbose_name=_("Products"),
-                                     through=Product.categories.through)
+                                     verbose_name=_("Products"))
     options = models.ManyToManyField("ProductOption", blank=True,
                                      verbose_name=_("Product options"),
                                      related_name="product_options")
