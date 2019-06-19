@@ -24,7 +24,7 @@ from mezzanine.conf import settings
 from mezzanine.core.fields import FileField
 from mezzanine.core.managers import DisplayableManager
 from mezzanine.core.models import (
-    ContentTyped, Displayable, Orderable, RichText, SiteRelated)
+    ContentTyped, Displayable, Orderable, RichText, SiteRelated, TeamOwnable)
 from mezzanine.generic.fields import RatingField
 from mezzanine.pages.models import Page
 from mezzanine.utils.models import AdminThumbMixin, upload_to
@@ -364,6 +364,7 @@ class Category(Page, RichText):
     class Meta:
         verbose_name = _("Product category")
         verbose_name_plural = _("Product categories")
+        permissions = TeamOwnable.Meta.permissions
 
     def filters(self):
         """
