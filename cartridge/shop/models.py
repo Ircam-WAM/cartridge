@@ -2,6 +2,7 @@ from __future__ import division, unicode_literals
 from future.builtins import str, super
 from future.utils import with_metaclass
 
+import uuid
 from decimal import Decimal
 from functools import reduce
 from operator import iand, ior
@@ -259,7 +260,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         """
         super(ProductVariation, self).save(*args, **kwargs)
         if not self.sku:
-            self.sku = self.id
+            self.sku = str(uuid.uuid1())[:7]
             self.save()
 
     def get_absolute_url(self):
