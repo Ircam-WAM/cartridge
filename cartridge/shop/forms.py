@@ -453,7 +453,7 @@ class MoneyWidget(forms.TextInput):
     """
     Render missing decimal places for money fields.
     """
-    def render(self, name, value, attrs):
+    def render(self, name, value, attrs, renderer):
         try:
             value = float(value)
         except (TypeError, ValueError):
@@ -462,7 +462,7 @@ class MoneyWidget(forms.TextInput):
             set_locale()
             value = ("%%.%sf" % localeconv()["frac_digits"]) % value
             attrs["style"] = "text-align:right;"
-        return super(MoneyWidget, self).render(name, value, attrs)
+        return super(MoneyWidget, self).render(name, value, attrs, renderer)
 
 
 class ProductAdminFormMetaclass(ModelFormMetaclass):
