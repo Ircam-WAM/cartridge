@@ -5,7 +5,7 @@ from json import dumps
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.messages import info
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db.models import Sum
 from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -372,6 +372,7 @@ def complete(request, template="shop/complete.html", extra_context=None):
     return TemplateResponse(request, template, context)
 
 
+@never_cache
 def invoice(request, order_id, template="shop/order_invoice.html",
             template_pdf="shop/order_invoice_pdf.html", extra_context=None):
     """
@@ -414,6 +415,7 @@ def order_history(request, template="shop/order_history.html",
     return TemplateResponse(request, template, context)
 
 
+@never_cache
 def invoice_resend_email(request, order_id):
     """
     Re-sends the order complete email for the given order and redirects

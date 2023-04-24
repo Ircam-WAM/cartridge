@@ -2,12 +2,13 @@ from __future__ import division, unicode_literals
 from future.builtins import str, super
 from future.utils import with_metaclass
 
+import uuid
 from decimal import Decimal
 from functools import reduce
 from operator import iand, ior
 
 from django.core.exceptions import ValidationError
-from django.core.urlresolvers import reverse
+from django.urls import reverse
 from django.db import models, connection
 from django.db.models.signals import m2m_changed
 from django.db.models import CharField, Q, F
@@ -18,13 +19,12 @@ from django.utils.translation import (ugettext, ugettext_lazy as _,
                                       pgettext_lazy as __)
 
 from django.utils.encoding import force_text
-from django.utils.encoding import python_2_unicode_compatible
 
 from mezzanine.conf import settings
 from mezzanine.core.fields import FileField
 from mezzanine.core.managers import DisplayableManager
 from mezzanine.core.models import (
-    ContentTyped, Displayable, Orderable, RichText, SiteRelated)
+    ContentTyped, Displayable, Orderable, RichText, SiteRelated, TeamOwnable)
 from mezzanine.generic.fields import RatingField
 from mezzanine.pages.models import Page
 from mezzanine.utils.models import AdminThumbMixin, upload_to
@@ -143,9 +143,8 @@ class Product(BaseProduct, Priced, RichText, ContentTyped, AdminThumbMixin):
             default = self.variations.get(default=True)
             self.copy_price_fields_to(default)
 
-    @models.permalink
     def get_absolute_url(self):
-        return ("shop_product", (), {"slug": self.slug})
+        return reverse("shop_product", kwargs={"slug": self.slug})
 
     def copy_default_variation(self):
         """
@@ -159,7 +158,6 @@ class Product(BaseProduct, Priced, RichText, ContentTyped, AdminThumbMixin):
         self.save()
 
 
-@python_2_unicode_compatible
 class ProductImage(Orderable):
     """
     An image for a product - a relationship is also defined with the
@@ -172,7 +170,8 @@ class ProductImage(Orderable):
     file = FileField(_("Image"), max_length=255, format="Image",
         upload_to=upload_to("shop.ProductImage.file", "product"))
     description = CharField(_("Description"), blank=True, max_length=100)
-    product = models.ForeignKey("Product", related_name="images")
+    product = models.ForeignKey("Product", related_name="images",
+                                on_delete=models.CASCADE)
 
     class Meta:
         verbose_name = _("Image")
@@ -188,7 +187,6 @@ class ProductImage(Orderable):
         return value
 
 
-@python_2_unicode_compatible
 class ProductOption(models.Model):
     """
     A selectable option for a product such as size or colour.
@@ -222,14 +220,14 @@ class ProductVariationMetaclass(ModelBase):
         return super(ProductVariationMetaclass, cls).__new__(*args)
 
 
-@python_2_unicode_compatible
 class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
     """
     A combination of selected options from
     ``SHOP_OPTION_TYPE_CHOICES`` for a ``Product`` instance.
     """
 
-    product = models.ForeignKey("Product", related_name="variations")
+    product = models.ForeignKey("Product", related_name="variations",
+                                on_delete=models.CASCADE)
     default = models.BooleanField(_("Default"), default=False)
     image = models.ForeignKey("ProductImage", verbose_name=_("Image"),
                               null=True, blank=True, on_delete=models.SET_NULL)
@@ -259,7 +257,7 @@ class ProductVariation(with_metaclass(ProductVariationMetaclass, Priced)):
         """
         super(ProductVariation, self).save(*args, **kwargs)
         if not self.sku:
-            self.sku = self.id
+            self.sku = str(uuid.uuid1())[:7]
             self.save()
 
     def get_absolute_url(self):
@@ -353,7 +351,7 @@ class Category(Page, RichText):
                                      verbose_name=_("Product options"),
                                      related_name="product_options")
     sale = models.ForeignKey("Sale", verbose_name=_("Sale"),
-                             blank=True, null=True)
+                             blank=True, null=True, on_delete=models.CASCADE)
     price_min = fields.MoneyField(_("Minimum price"), blank=True, null=True)
     price_max = fields.MoneyField(_("Maximum price"), blank=True, null=True)
     combined = models.BooleanField(_("Combined"), default=True,
@@ -364,6 +362,7 @@ class Category(Page, RichText):
     class Meta:
         verbose_name = _("Product category")
         verbose_name_plural = _("Product categories")
+        permissions = TeamOwnable.Meta.permissions
 
     def filters(self):
         """
@@ -414,7 +413,6 @@ class Category(Page, RichText):
         return products
 
 
-@python_2_unicode_compatible
 class Order(SiteRelated):
 
     billing_detail_first_name = CharField(_("First name"), max_length=100)
@@ -642,7 +640,6 @@ class Cart(models.Model):
         return total
 
 
-@python_2_unicode_compatible
 class SelectedProduct(models.Model):
     """
     Abstract model representing a "selected" product in a cart or order.
@@ -675,7 +672,8 @@ class SelectedProduct(models.Model):
 
 class CartItem(SelectedProduct):
 
-    cart = models.ForeignKey("Cart", related_name="items")
+    cart = models.ForeignKey("Cart", related_name="items",
+                             on_delete=models.CASCADE)
     url = CharField(max_length=2000)
     image = CharField(max_length=200, null=True)
 
@@ -694,7 +692,8 @@ class OrderItem(SelectedProduct):
     """
     A selected product in a completed order.
     """
-    order = models.ForeignKey("Order", related_name="items")
+    order = models.ForeignKey("Order", related_name="items",
+                              on_delete=models.CASCADE)
 
 
 class ProductAction(models.Model):
@@ -705,7 +704,8 @@ class ProductAction(models.Model):
     popularity and sales reporting.
     """
 
-    product = models.ForeignKey("Product", related_name="actions")
+    product = models.ForeignKey("Product", related_name="actions",
+                                on_delete=models.CASCADE)
     timestamp = models.IntegerField()
     total_cart = models.IntegerField(default=0)
     total_purchase = models.IntegerField(default=0)
@@ -716,7 +716,6 @@ class ProductAction(models.Model):
         unique_together = ("product", "timestamp")
 
 
-@python_2_unicode_compatible
 class Discount(models.Model):
     """
     Abstract model representing one of several types of monetary

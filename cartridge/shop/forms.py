@@ -155,7 +155,7 @@ CartItemFormSet = inlineformset_factory(Cart, CartItem, form=CartItemForm,
 class FormsetForm(object):
     """
     Form mixin that provides template methods for iterating through
-    sets of fields by prefix, single fields and finally remaning
+    sets of fields by prefix, single fields and finally remaining
     fields that haven't been, iterated with each fieldset made up from
     a copy of the original form, giving access to as_* methods.
 
@@ -453,7 +453,7 @@ class MoneyWidget(forms.TextInput):
     """
     Render missing decimal places for money fields.
     """
-    def render(self, name, value, attrs):
+    def render(self, name, value, attrs, renderer):
         try:
             value = float(value)
         except (TypeError, ValueError):
@@ -462,7 +462,7 @@ class MoneyWidget(forms.TextInput):
             set_locale()
             value = ("%%.%sf" % localeconv()["frac_digits"]) % value
             attrs["style"] = "text-align:right;"
-        return super(MoneyWidget, self).render(name, value, attrs)
+        return super(MoneyWidget, self).render(name, value, attrs, renderer)
 
 
 class ProductAdminFormMetaclass(ModelFormMetaclass):
